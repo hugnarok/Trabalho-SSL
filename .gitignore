@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Projeto
+data/alerts/*
+!data/alerts/.gitkeep
+*.wav
+*.mp4
+*.avi
+!data/samples/.gitkeep
+
+# Logs
+*.log
