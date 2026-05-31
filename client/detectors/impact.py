@@ -17,7 +17,7 @@ def detect_impact(
         return DetectionResult(False, EventType.IMPACT, 0.0, "sem áudio")
 
     x = audio.astype(np.float64)
-    frame_len = max(1, int(sample_rate * 0.05))
+    frame_len = max(1, int(sample_rate * settings.impact_window_seconds))
     n_frames = len(x) // frame_len
     if n_frames < 2:
         return DetectionResult(False, EventType.IMPACT, 0.0, "áudio curto")
@@ -28,8 +28,11 @@ def detect_impact(
     median = float(np.median(energies) + 1e-9)
     ratio = peak / median
 
-    detected = peak >= settings.impact_energy_threshold and ratio > 4.0
-    score = min(1.0, ratio / 10.0)
+    detected = (
+        peak >= settings.impact_energy_threshold
+        and ratio >= settings.impact_peak_ratio
+    )
+    score = min(1.0, ratio / (settings.impact_peak_ratio * 2))
 
     return DetectionResult(
         detected=detected,

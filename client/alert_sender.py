@@ -14,6 +14,7 @@ def send_alert(
     snapshot_jpeg: Optional[bytes],
     audio_wav: Optional[bytes],
     transcricao: str = "",
+    video_mp4: Optional[bytes] = None,
 ) -> AlertResponse:
     url = f"{settings.central_url.rstrip('/')}/api/alerts"
     data = {
@@ -26,6 +27,8 @@ def send_alert(
     files = {}
     if snapshot_jpeg:
         files["snapshot"] = ("snapshot.jpg", snapshot_jpeg, "image/jpeg")
+    if video_mp4:
+        files["video"] = ("clip.mp4", video_mp4, "video/mp4")
     if audio_wav:
         files["audio"] = ("clip.wav", audio_wav, "audio/wav")
 
@@ -33,6 +36,8 @@ def send_alert(
     if settings.central_api_key:
         headers["X-API-Key"] = settings.central_api_key
 
-    response = requests.post(url, data=data, files=files or None, headers=headers, timeout=15)
+    response = requests.post(
+        url, data=data, files=files or None, headers=headers, timeout=60
+    )
     response.raise_for_status()
     return AlertResponse(**response.json())

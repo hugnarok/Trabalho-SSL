@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
+from central.video_utils import ensure_faststart_mp4
 from shared.config import settings
 from shared.models import EventType
 
@@ -25,6 +26,7 @@ def save_alert(
     snapshot_bytes: Optional[bytes],
     audio_bytes: Optional[bytes],
     transcricao: str = "",
+    video_bytes: Optional[bytes] = None,
 ) -> dict:
     alert_id = str(uuid.uuid4())
     base = ensure_alerts_dir() / alert_id
@@ -32,6 +34,7 @@ def save_alert(
 
     snapshot_path: Optional[str] = None
     audio_path: Optional[str] = None
+    video_path: Optional[str] = None
 
     if snapshot_bytes:
         snap_file = base / "snapshot.jpg"
@@ -43,6 +46,12 @@ def save_alert(
         audio_file.write_bytes(audio_bytes)
         audio_path = str(audio_file.relative_to(settings.alerts_dir.parent.parent))
 
+    if video_bytes and len(video_bytes) > 200:
+        video_file = base / "clip.mp4"
+        video_file.write_bytes(video_bytes)
+        ensure_faststart_mp4(video_file)
+        video_path = str(video_file.relative_to(settings.alerts_dir.parent.parent))
+
     meta = {
         "alert_id": alert_id,
         "camera_id": camera_id,
@@ -53,6 +62,7 @@ def save_alert(
         "received_at": datetime.now(timezone.utc).isoformat(),
         "snapshot_path": snapshot_path,
         "audio_path": audio_path,
+        "video_path": video_path,
     }
     (base / "meta.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"

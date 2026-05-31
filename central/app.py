@@ -13,6 +13,7 @@ from typing import Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
+from central.media import media_file_response
 from central.storage import clear_all_alerts, list_alerts, save_alert
 from shared.config import settings
 from shared.models import AlertResponse, EventType
@@ -60,7 +61,7 @@ def central_dashboard():
     .btn-clear:hover { background: #c73e54; }
     .btn-clear:disabled { opacity: 0.5; cursor: not-allowed; }
     .alert { background: #16213e; padding: 1rem; margin: 0.5rem 0; border-radius: 8px; }
-    img { max-width: 320px; border-radius: 4px; }
+    img, video { max-width: 480px; border-radius: 4px; display: block; margin-top: 0.5rem; }
     a { color: #7eb8da; }
   </style>
 </head>
@@ -90,19 +91,30 @@ def central_dashboard():
     }
     document.getElementById('btnClear').addEventListener('click', clearAlerts);
 
+    let listSignature = '';
+
     async function load() {
       const r = await fetch('/api/alerts');
       const data = await r.json();
       const el = document.getElementById('list');
-      if (!data.alerts.length) { el.innerHTML = '<p>Nenhum alerta ainda.</p>'; return; }
+      if (!data.alerts.length) {
+        listSignature = '';
+        el.innerHTML = '<p>Nenhum alerta ainda.</p>';
+        return;
+      }
+      const signature = data.alerts.map(a => a.alert_id + (a.received_at || '')).join('|');
+      if (signature === listSignature) return;
+      listSignature = signature;
+
       el.innerHTML = data.alerts.map(a => `
         <div class="alert">
           <strong>${a.event_type}</strong> — câmera ${a.camera_id} — confiança ${a.confidence}
           <br><small>${a.received_at}</small>
           <p>${a.message || ''}</p>
           ${a.transcricao ? `<p><strong>Fala no momento:</strong> ${a.transcricao}</p>` : ''}
-          ${a.snapshot_path ? `<img src="/files/${a.snapshot_path}" alt="snapshot" />` : ''}
-          ${a.audio_path ? `<br><audio controls src="/files/${a.audio_path}"></audio>` : ''}
+          ${a.video_path ? `<video controls playsinline preload="auto" src="/api/alerts/${a.alert_id}/video#t=0.1"></video><a href="/api/alerts/${a.alert_id}/video" target="_blank">Abrir vídeo</a>` : ''}
+          ${a.snapshot_path ? `<img src="/api/alerts/${a.alert_id}/snapshot" alt="snapshot" />` : ''}
+          ${a.audio_path ? `<audio controls preload="metadata" src="/api/alerts/${a.alert_id}/audio"></audio>` : ''}
         </div>
       `).join('');
     }
@@ -113,12 +125,35 @@ def central_dashboard():
 """
 
 
+@app.api_route(
+    "/api/alerts/{alert_id}/video",
+    methods=["GET", "HEAD"],
+)
+def alert_video(alert_id: str):
+    return media_file_response(alert_id, "video")
+
+
+@app.get("/api/alerts/{alert_id}/audio")
+def alert_audio(alert_id: str):
+    return media_file_response(alert_id, "audio")
+
+
+@app.get("/api/alerts/{alert_id}/snapshot")
+def alert_snapshot(alert_id: str):
+    return media_file_response(alert_id, "snapshot")
+
+
 @app.get("/files/{file_path:path}")
 def serve_file(file_path: str):
-    full = settings.alerts_dir.parent.parent / file_path
-    if not full.exists() or not full.is_file():
+    """Compatibilidade com meta.json antigo."""
+    from central.media import MEDIA_TYPES
+
+    root = settings.alerts_dir.parent.parent.resolve()
+    full = (root / file_path).resolve()
+    if not str(full).startswith(str(root)) or not full.is_file():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-    return FileResponse(full)
+    media_type = MEDIA_TYPES.get(full.suffix.lower(), "application/octet-stream")
+    return FileResponse(full, media_type=media_type)
 
 
 @app.post("/api/alerts", response_model=AlertResponse)
@@ -129,9 +164,11 @@ async def receive_alert(
     message: str = Form(""),
     transcricao: str = Form(""),
     snapshot: Optional[UploadFile] = File(None),
+    video: Optional[UploadFile] = File(None),
     audio: Optional[UploadFile] = File(None),
 ):
     snapshot_bytes = await snapshot.read() if snapshot else None
+    video_bytes = await video.read() if video else None
     audio_bytes = await audio.read() if audio else None
 
     meta = save_alert(
@@ -142,6 +179,7 @@ async def receive_alert(
         snapshot_bytes=snapshot_bytes,
         audio_bytes=audio_bytes,
         transcricao=transcricao,
+        video_bytes=video_bytes,
     )
     return AlertResponse(
         alert_id=meta["alert_id"],

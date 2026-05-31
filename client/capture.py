@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import io
+import os
 import platform
 import sys
+import tempfile
 import threading
 import time
 import wave
-from typing import Optional, Tuple
+from collections import deque
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -89,14 +92,72 @@ class AudioRingBuffer:
             self._stream = None
 
 
-class _VideoReaderThread(threading.Thread):
-    """Lê a câmera o mais rápido possível; o loop principal só consome o último frame."""
+def _frames_to_mp4_bytes_opencv(frames: List[np.ndarray], fps: int) -> Optional[bytes]:
+    """Fallback se imageio não estiver disponível."""
+    if not frames:
+        return None
+    h, w = frames[0].shape[:2]
+    fps = max(5, min(fps, 60))
+    tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    path = tmp.name
+    tmp.close()
+    try:
+        codec = "avc1" if platform.system() == "Darwin" else "mp4v"
+        writer = cv2.VideoWriter(
+            path, cv2.VideoWriter_fourcc(*codec), float(fps), (w, h)
+        )
+        if not writer.isOpened():
+            return None
+        for frame in frames:
+            writer.write(frame)
+        writer.release()
+        data = open(path, "rb").read()
+        return data if len(data) > 100 else None
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)
 
-    def __init__(self, cap: cv2.VideoCapture):
+
+def _frames_to_mp4_bytes(frames: List[np.ndarray], fps: int) -> Optional[bytes]:
+    """H.264 (yuv420p) — compatível com Chrome/Safari no painel da central."""
+    if not frames:
+        return None
+    fps = max(5, min(fps, 60))
+    try:
+        import imageio.v3 as iio
+    except ImportError:
+        return _frames_to_mp4_bytes_opencv(frames, fps)
+
+    rgb = [cv2.cvtColor(f, cv2.COLOR_BGR2RGB) for f in frames]
+    path = tempfile.mktemp(suffix=".mp4")
+    try:
+        iio.imwrite(
+            path,
+            rgb,
+            fps=fps,
+            codec="libx264",
+            extension=".mp4",
+            ffmpeg_params=["-movflags", "+faststart", "-pix_fmt", "yuv420p"],
+        )
+        data = open(path, "rb").read()
+        return data if len(data) > 100 else None
+    except Exception as exc:
+        print(f"[vídeo] imageio falhou ({exc}); usando fallback OpenCV.", file=sys.stderr)
+        return _frames_to_mp4_bytes_opencv(frames, fps)
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)
+
+
+class _VideoReaderThread(threading.Thread):
+    """Lê a câmera e mantém buffer circular para clip de vídeo no alerta."""
+
+    def __init__(self, cap: cv2.VideoCapture, buffer_seconds: float, fps: int):
         super().__init__(daemon=True, name="video-capture")
         self._cap = cap
         self._lock = threading.Lock()
         self._latest: Optional[np.ndarray] = None
+        self._frames: deque = deque(maxlen=max(30, int(buffer_seconds * fps) + 10))
         self._running = False
 
     def run(self) -> None:
@@ -106,6 +167,7 @@ class _VideoReaderThread(threading.Thread):
             if ok:
                 with self._lock:
                     self._latest = frame
+                    self._frames.append(frame.copy())
             else:
                 time.sleep(0.01)
 
@@ -121,6 +183,14 @@ class _VideoReaderThread(threading.Thread):
             if self._latest is None:
                 return None
             return self._latest.copy()
+
+    def get_clip_mp4_bytes(self, seconds: float, fps: int) -> Optional[bytes]:
+        with self._lock:
+            if not self._frames:
+                return None
+            n = min(len(self._frames), max(1, int(seconds * fps)))
+            clip = list(self._frames)[-n:]
+        return _frames_to_mp4_bytes(clip, fps)
 
 
 class StreamCapture:
@@ -174,7 +244,12 @@ class StreamCapture:
         else:
             self._preview_size = (w, h) if w > 0 and h > 0 else None
 
-        self._video_thread = _VideoReaderThread(self._cap)
+        fps = max(5, settings.camera_fps)
+        self._video_thread = _VideoReaderThread(
+            self._cap,
+            buffer_seconds=settings.video_buffer_seconds,
+            fps=fps,
+        )
         self._video_thread.start()
 
         self._audio = AudioRingBuffer(self.sample_rate, self.chunk_seconds)
@@ -189,6 +264,15 @@ class StreamCapture:
         if self._video_thread is None:
             return None
         return self._video_thread.get_latest_copy()
+
+    def get_alert_video_bytes(self) -> Optional[bytes]:
+        if self._video_thread is None:
+            return None
+        fps = max(5, settings.camera_fps)
+        return self._video_thread.get_clip_mp4_bytes(
+            settings.alert_video_seconds,
+            fps,
+        )
 
     def make_preview(self, frame: np.ndarray, status_text: str, alert_active: bool) -> np.ndarray:
         out = frame.copy()

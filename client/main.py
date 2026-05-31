@@ -35,8 +35,17 @@ def _send_alert_async(
     if (now - last_alert_at) < settings.alert_cooldown_seconds:
         return last_alert_at
 
-    frame = capture.get_snapshot_frame()
-    snapshot = capture.frame_to_jpeg_bytes(frame) if frame is not None else None
+    snapshot = None
+    video_mp4 = None
+    if settings.alert_save_video:
+        video_mp4 = capture.get_alert_video_bytes()
+        if not video_mp4:
+            print("  [aviso] Clip de vídeo vazio; verifique buffer da câmera.")
+    if settings.alert_save_snapshot:
+        frame = capture.get_snapshot_frame()
+        if frame is not None:
+            snapshot = capture.frame_to_jpeg_bytes(frame)
+
     wav = capture.audio_to_wav_bytes(state.last_audio, capture.sample_rate)
 
     transcricao = ""
@@ -49,7 +58,9 @@ def _send_alert_async(
     if transcricao:
         print(f'  Fala transcrita: "{transcricao}"')
     try:
-        resp = send_alert(state.best, snapshot, wav, transcricao=transcricao)
+        resp = send_alert(
+            state.best, snapshot, wav, transcricao=transcricao, video_mp4=video_mp4
+        )
         print(f"  -> Central OK: alert_id={resp.alert_id}")
         return now
     except Exception as exc:
@@ -90,7 +101,7 @@ def run():
                 preview = capture.make_preview(
                     frame,
                     state.status,
-                    alert_active=state.best is not None,
+                    alert_active=state.candidate is not None,
                 )
                 cv2.imshow(window, preview)
 

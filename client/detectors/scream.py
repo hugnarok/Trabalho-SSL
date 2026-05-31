@@ -19,24 +19,29 @@ def detect_scream(
     if audio.size == 0:
         return DetectionResult(False, EventType.SCREAM, 0.0, "sem áudio")
 
-    # Normalização
     x = audio.astype(np.float64)
     x = x / (np.max(np.abs(x)) + 1e-9)
 
-    # Energia RMS no domínio do tempo
     rms = float(np.sqrt(np.mean(x**2)))
 
-    # Energia na banda aguda (aprox. 2–8 kHz) via FFT
     n = min(len(x), sample_rate * 2)
     segment = x[:n]
     spectrum = np.abs(rfft(segment))
     freqs = rfftfreq(n, 1 / sample_rate)
-    high_band = (freqs >= 2000) & (freqs <= 8000)
+    high_band = (freqs >= settings.scream_band_low_hz) & (
+        freqs <= settings.scream_band_high_hz
+    )
     high_energy = float(np.mean(spectrum[high_band]) / (np.mean(spectrum) + 1e-9))
 
-    # Score heurístico (substituir por modelo treinado depois)
-    score = min(1.0, 0.5 * (rms / settings.scream_energy_threshold) + 0.5 * high_energy)
-    detected = rms >= settings.scream_energy_threshold and high_energy > 1.2
+    score = min(
+        1.0,
+        0.5 * (rms / settings.scream_energy_threshold)
+        + 0.5 * (high_energy / settings.scream_high_band_ratio),
+    )
+    detected = (
+        rms >= settings.scream_energy_threshold
+        and high_energy >= settings.scream_high_band_ratio
+    )
 
     return DetectionResult(
         detected=detected,
