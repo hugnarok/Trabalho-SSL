@@ -43,13 +43,28 @@ class Settings(BaseSettings):
     help_keyword_enabled: bool = True
     transcription_enabled: bool = True
     vosk_model_path: Path = ROOT_DIR / "data" / "models" / "vosk-model-small-pt-0.3"
-    help_keywords: str = "socorro,me ajuda,ajuda,polícia,policia"
+    help_keywords: str = (
+        "socorro,me ajuda,me ajudem,preciso de ajuda,alguém me ajuda,"
+        "chama a polícia,chama a policia,polícia,policia"
+    )
+    help_min_confidence: float = 0.85
+    help_min_word_confidence: float = 0.45
+    help_confirmations_required: int = 2
 
     # Evidência no alerta (vídeo em vez de foto por padrão)
     alert_save_video: bool = True
     alert_video_seconds: float = 5.0
     video_buffer_seconds: float = 6.0
     alert_save_snapshot: bool = False
+
+    # Machine learning (som)
+    ml_enabled: bool = True
+    ml_model_path: Path = ROOT_DIR / "data" / "models" / "sound_classifier.pt"
+    ml_confidence_threshold: float = 0.65
+    ml_heuristic_fallback: bool = True
+    zenodo_nigens_record_id: str = "2535878"
+    nigens_download_dir: Path = ROOT_DIR / "data" / "datasets" / "nigens" / "downloads"
+    nigens_raw_dir: Path = ROOT_DIR / "data" / "datasets" / "nigens" / "raw"
 
     # Armazenamento
     alerts_dir: Path = ROOT_DIR / "data" / "alerts"

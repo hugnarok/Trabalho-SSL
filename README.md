@@ -24,6 +24,28 @@ bash scripts/setup_vosk.sh   # modelo de transcrição em português (~50 MB)
 cp .env.example .env        # opcional — ajustar limiares
 ```
 
+### Machine learning (recomendado para melhor acurácia)
+
+```bash
+# Download automático do NIGENS (Zenodo, ~2 GB) + preparar + treinar
+python -m scripts.download_nigens --all --epochs 25
+```
+
+Guia completo: [docs/ml.md](docs/ml.md)
+
+### O que **não** sobe para o Git
+
+Por licença (NIGENS CC BY-NC-ND) e tamanho (~2 GB), **áudios e modelos ficam só na máquina local**:
+
+| Conteúdo | Onde fica | Como obter |
+|----------|-----------|------------|
+| Dataset NIGENS (ZIP + WAV) | `data/datasets/nigens/` | `python -m scripts.download_nigens` |
+| Clipes preparados | `data/datasets/prepared/` | `--prepare` (gerado automaticamente) |
+| Modelo CNN treinado | `data/models/sound_classifier.pt` | `--train` ou `train_sound_model` |
+| Modelo Vosk (PT) | `data/models/vosk-model-small-pt-0.3/` | `bash scripts/setup_vosk.sh` |
+
+Quem clonar o repositório deve rodar os comandos acima antes de usar o cliente com ML/transcrição.
+
 ## Executar (dois terminais)
 
 **Terminal 1 — Central:**
@@ -49,12 +71,15 @@ Na primeira execução no macOS, conceda permissão de **Câmera** e **Microfone
 
 ```text
 TrabalhoFinal/
-├── client/           # Captura, detectores, envio de alertas
+├── client/           # Captura, detectores, ML, envio de alertas
+├── scripts/          # prepare_nigens, train_sound_model
 ├── central/          # API + armazenamento + dashboard
 ├── shared/           # Modelos e configuração
 ├── data/
-│   ├── alerts/       # Alertas recebidos (gerado em runtime)
-│   └── samples/      # Vídeos/áudios de teste (vocês adicionam)
+│   ├── alerts/       # Alertas recebidos (gerado em runtime, não versionado)
+│   ├── datasets/     # NIGENS + prepared (baixar localmente — ver docs/ml.md)
+│   ├── models/       # Vosk + CNN (gerar localmente)
+│   └── samples/      # Vídeos/áudios de teste opcionais (não versionados)
 ├── docs/
 │   ├── arquitetura.md
 │   └── referencias.md
@@ -92,7 +117,7 @@ Variáveis em `.env` (veja `.env.example`):
 | Módulo | Status |
 |--------|--------|
 | Captura câmera + áudio | Funcional |
-| Detecção grito / impacto | Heurística inicial (calibrar) |
+| Detecção grito / impacto | Heurística + **CNN (mel-spectrogram)** |
 | Pedido de socorro | Transcrição Vosk + palavras-chave |
 | Central + alertas | Funcional |
 | Agressão em vídeo | Planejado |

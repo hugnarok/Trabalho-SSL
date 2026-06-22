@@ -6,29 +6,17 @@ Uso:
 """
 
 import sys
-import wave
 from pathlib import Path
-
-import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from client.ml.audio_io import load_wav
 from client.detectors.help_request import detect_help_request
 from client.detectors.impact import detect_impact
 from client.detectors.scream import detect_scream
 from shared.config import settings
-
-
-def load_wav(path: Path) -> tuple[np.ndarray, int]:
-    with wave.open(str(path), "rb") as wf:
-        rate = wf.getframerate()
-        frames = wf.readframes(wf.getnframes())
-        audio = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
-        if wf.getnchannels() > 1:
-            audio = audio.reshape(-1, wf.getnchannels())[:, 0]
-    return audio, rate
 
 
 def main():
@@ -36,9 +24,12 @@ def main():
         print("Uso: python -m client.calibrate <arquivo.wav>")
         sys.exit(1)
 
-    path = Path(sys.argv[1])
-    if not path.exists():
+    path = Path(sys.argv[1]).expanduser()
+    if not path.is_file():
         print(f"Arquivo não encontrado: {path}")
+        print("\nUse um caminho real para um .wav, por exemplo:")
+        print("  python -m client.calibrate data/datasets/prepared/grito/femaleScream_0000.wav")
+        print("  python -m client.calibrate data/samples/ml/grito/meu_teste.wav")
         sys.exit(1)
 
     audio, rate = load_wav(path)

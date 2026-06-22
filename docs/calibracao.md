@@ -21,6 +21,23 @@ Na tela você verá `grito? (1/2)` antes de confirmar; após confirmar, vira `gr
 | `DETECTION_CONFIRMATIONS_REQUIRED` | **3** | **1** |
 | `ALERT_COOLDOWN_SECONDS` | **Aumentar** (ex.: 20) | — |
 
+## Pedido de socorro (não é o modelo CNN)
+
+O classificador treinado no NIGENS reconhece **grito**, **impacto** e **normal** — não pedido de socorro.
+
+Socorro usa **Vosk (transcrição)** + **palavras-chave** em `HELP_KEYWORDS`. Só dispara alerta se o texto transcrito contiver uma frase configurada (ex.: `socorro`, `me ajuda`, `preciso de ajuda`).
+
+| Variável | Efeito |
+|----------|--------|
+| `HELP_KEYWORDS` | Lista separada por vírgula; evite `ajuda` sozinha (dispara em "ajudar") |
+| `HELP_MIN_WORD_CONFIDENCE` | Confiança mínima da palavra no Vosk (ex.: 0.45) |
+| `HELP_MIN_CONFIDENCE` | Confiança mínima do alerta de socorro (ex.: 0.85) |
+| `HELP_CONFIRMATIONS_REQUIRED` | Quantas leituras seguidas com a mesma frase (ex.: 2) |
+
+Teste sem câmera: fale claramente *"socorro"* ou *"me ajuda"* no microfone, ou use `python -m client.calibrate arquivo.wav`.
+
+Se **qualquer voz** dispara **grito** (não socorro), suba `ML_CONFIDENCE_THRESHOLD` (ex.: 0.75) ou defina `ML_HEURISTIC_FALLBACK=false`.
+
 ## Testar com arquivo de áudio
 
 ```bash

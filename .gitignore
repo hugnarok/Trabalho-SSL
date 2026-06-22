@@ -8,20 +8,47 @@ __pycache__/
 venv/
 env/
 .env
-
+data/
 # IDE
 .idea/
 .vscode/
 *.swp
 .DS_Store
 
-# Projeto
+# Projeto — alertas gerados em runtime
 data/alerts/*
 !data/alerts/.gitkeep
+
+# Datasets e áudios (NIGENS ~2 GB — baixar localmente, ver README)
+data/datasets/nigens/downloads/*
+!data/datasets/nigens/downloads/.gitkeep
+data/datasets/nigens/raw/**
+!data/datasets/nigens/raw/.gitkeep
+data/datasets/prepared/*
+!data/datasets/prepared/.gitkeep
+!data/datasets/prepared/grito/
+data/datasets/prepared/grito/*
+!data/datasets/prepared/grito/.gitkeep
+!data/datasets/prepared/impacto/
+data/datasets/prepared/impacto/*
+!data/datasets/prepared/impacto/.gitkeep
+!data/datasets/prepared/normal/
+data/datasets/prepared/normal/*
+!data/datasets/prepared/normal/.gitkeep
+
+# Modelos (Vosk ~50 MB, CNN treinada — gerar localmente)
+data/models/*
+!data/models/.gitkeep
+
+# Amostras locais de teste (opcional)
+data/samples/**
+!data/samples/.gitkeep
+!data/samples/ml/
+!data/samples/ml/.gitkeep
+
 *.wav
 *.mp4
 *.avi
-!data/samples/.gitkeep
 
 # Logs
 *.log

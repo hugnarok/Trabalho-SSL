@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -11,7 +11,9 @@ from client.capture import StreamCapture
 from client.detectors.base import DetectionResult
 from client.detectors.help_request import detect_help_request
 from client.detectors.impact import detect_impact
+from client.detectors.ml_events import detect_ml_events
 from client.detectors.scream import detect_scream
+from client.ml.classifier import is_model_available
 from shared.config import settings
 from shared.models import EventType
 
@@ -25,7 +27,7 @@ class DetectionState:
 
 
 class DetectionWorker(threading.Thread):
-    """Roda detectores em thread separada; exige confirmações seguidas antes do alerta."""
+    """Detectores heurísticos + ML + confirmação em sequência."""
 
     def __init__(self, capture: StreamCapture):
         super().__init__(daemon=True, name="detection-worker")
@@ -36,13 +38,49 @@ class DetectionWorker(threading.Thread):
         self._streak_type: Optional[EventType] = None
         self._streak_count = 0
 
-    def _update_streak(self, candidate: Optional[DetectionResult]) -> Optional[DetectionResult]:
-        required = max(1, settings.detection_confirmations_required)
+    def _collect_results(self, audio: np.ndarray, sample_rate: int) -> List[DetectionResult]:
+        results: List[DetectionResult] = []
+        ml_ok = settings.ml_enabled and is_model_available()
 
-        if (
-            candidate is None
-            or candidate.confidence < settings.min_alert_confidence
-        ):
+        if ml_ok:
+            ml_result = detect_ml_events(audio, sample_rate)
+            if ml_result.detected:
+                results.append(ml_result)
+
+        use_heuristic = settings.ml_heuristic_fallback or not ml_ok
+        if use_heuristic:
+            results.extend(
+                [
+                    detect_scream(audio, sample_rate),
+                    detect_impact(audio, sample_rate),
+                ]
+            )
+
+        if settings.help_keyword_enabled:
+            results.append(detect_help_request(audio, sample_rate))
+
+        return results
+
+    def _min_confidence_for(self, event_type: EventType) -> float:
+        if event_type == EventType.HELP_REQUEST:
+            return max(settings.min_alert_confidence, settings.help_min_confidence)
+        return settings.min_alert_confidence
+
+    def _confirmations_required_for(self, event_type: EventType) -> int:
+        if event_type == EventType.HELP_REQUEST:
+            return max(1, settings.help_confirmations_required)
+        return max(1, settings.detection_confirmations_required)
+
+    def _update_streak(self, candidate: Optional[DetectionResult]) -> Optional[DetectionResult]:
+        if candidate is None:
+            self._streak_type = None
+            self._streak_count = 0
+            return None
+
+        required = self._confirmations_required_for(candidate.event_type)
+        min_conf = self._min_confidence_for(candidate.event_type)
+
+        if candidate.confidence < min_conf:
             self._streak_type = None
             self._streak_count = 0
             return None
@@ -65,7 +103,7 @@ class DetectionWorker(threading.Thread):
         if confirmed:
             return confirmed.event_type.value
         if candidate:
-            req = settings.detection_confirmations_required
+            req = self._confirmations_required_for(candidate.event_type)
             return f"{candidate.event_type.value}? ({self._streak_count}/{req})"
         return "monitorando"
 
@@ -73,14 +111,7 @@ class DetectionWorker(threading.Thread):
         self._running = True
         while self._running:
             audio = self._capture.read_audio_chunk()
-            results = [
-                detect_scream(audio, self._capture.sample_rate),
-                detect_impact(audio, self._capture.sample_rate),
-            ]
-            if settings.help_keyword_enabled:
-                results.append(
-                    detect_help_request(audio, self._capture.sample_rate)
-                )
+            results = self._collect_results(audio, self._capture.sample_rate)
 
             detected = [r for r in results if r.detected]
             candidate = (
