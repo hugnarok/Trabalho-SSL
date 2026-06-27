@@ -15,11 +15,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import cv2
+import numpy as np
 
 from client.alert_sender import send_alert
 from client.capture import StreamCapture
 from client.detection_worker import DetectionWorker
 from client.transcription import transcribe_audio
+from client.waveform_overlay import danger_level_from_state, render_waveform_overlay
 from shared.config import settings
 
 
@@ -78,7 +80,7 @@ def run():
     alert_lock = threading.Lock()
     had_active_alert = False
     frame_interval = 1.0 / max(1, settings.display_fps)
-    window = "Monitoramento SSL"
+    window = "Monitoramento de Ondas Sonoras"
 
     print("Cliente iniciado. Central:", settings.central_url)
     print(
@@ -101,9 +103,18 @@ def run():
                 preview = capture.make_preview(
                     frame,
                     state.status,
-                    alert_active=state.candidate is not None,
+                    alert_active=state.candidate is not None or state.best is not None,
                 )
-                cv2.imshow(window, preview)
+                audio_live = capture.read_audio_chunk()
+                level = danger_level_from_state(state.candidate, state.best)
+                wave = render_waveform_overlay(
+                    audio_live,
+                    preview.shape[1],
+                    capture.sample_rate,
+                    danger_level=level,
+                )
+                combined = np.vstack([preview, wave])
+                cv2.imshow(window, combined)
 
             delay_ms = max(1, int(frame_interval * 1000))
             key = cv2.waitKey(delay_ms) & 0xFF
