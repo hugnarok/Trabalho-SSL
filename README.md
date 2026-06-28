@@ -343,3 +343,71 @@ O código-fonte deste projeto é de uso acadêmico. O dataset NIGENS é distribu
 - Não armazene dados de terceiros sem base legal conforme a **Lei nº 13.709/2018 (LGPD)**.
 - O sistema não realiza identificação de pessoas e não deve ser usado como ferramenta de vigilância irrestrita.
 - Para implantação real em campus universitário, consulte a assessoria jurídica da instituição.
+
+---
+
+## Autores e Contatos
+
+<div align="center">
+  <br><br>
+     <i>Deivy Rossi Teixeira de Melo - Graduando - 5º Período de Engenharia de Computação @ CEFET-MG</i>
+  <br><br>
+  
+  [![Gmail][gmail-badge]][gmail-autor1]
+  [![Linkedin][linkedin-badge]][linkedin-autor1]
+  [![GitHub][github-badge]][github-autor1]
+  [![Instagram][instagram-badge]][instagram-autor1]
+  
+  <br><br>
+     <i>Fernando Horita Siratuti - Graduando - 5º Período de Engenharia de Computação @ CEFET-MG</i>
+  <br><br>
+  
+  [![Gmail][gmail-badge]][gmail-autor2]
+  [![Linkedin][linkedin-badge]][linkedin-autor2]
+  [![GitHub][github-badge]][github-autor2]
+  [![Instagram][instagram-badge]][instagram-autor2]
+  
+  <br><br>
+     <i>Hugo Henrique Marques - Graduando - 5º Período de Engenharia de Computação @ CEFET-MG</i>
+  <br><br>
+  
+  [![Gmail][gmail-badge]][gmail-autor3]
+  [![Linkedin][linkedin-badge]][linkedin-autor3]
+  [![GitHub][github-badge]][github-autor3]
+  [![Instagram][instagram-badge]][instagram-autor3]
+  
+  <br><br>
+     <i>Vinicius Ramalho de Oliveira - Graduando - 5º Período de Engenharia de Computação @ CEFET-MG</i>
+  <br><br>
+  
+  [![Gmail][gmail-badge]][gmail-autor4]
+  [![Linkedin][linkedin-badge]][linkedin-autor4]
+  [![GitHub][github-badge]][github-autor4]
+  [![Instagram][instagram-badge]][instagram-autor4]
+
+</div>
+
+[gmail-badge]: https://img.shields.io/badge/-Gmail-c14438?style=flat-square&logo=Gmail&logoColor=white
+[linkedin-badge]: https://img.shields.io/badge/-LinkedIn-blue?style=flat-square&logo=Linkedin&logoColor=white
+[github-badge]: https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github&logoColor=white
+[instagram-badge]: https://img.shields.io/badge/-Instagram-E4405F?style=flat-square&logo=instagram&logoColor=white
+
+[gmail-autor1]: mailto:deivyrossi@gmail.com
+[linkedin-autor1]: https://www.linkedin.com/in/deivy-rossi-380263279/
+[github-autor1]: https://github.com/deivyrossi
+[instagram-autor1]: https://www.instagram.com/deivyrossi/
+
+[gmail-autor2]: mailto:siratutifernando@gmail.com
+[linkedin-autor2]: https://www.linkedin.com/in/fernando-siratuti-503ba8301/
+[github-autor2]: https://github.com/fernando-horita-siratuti
+[instagram-autor2]: https://www.instagram.com/siratuti_/
+
+[gmail-autor3]: mailto:hugohmarques4@gmail.com
+[linkedin-autor3]: https://www.linkedin.com/in/hugo-h-marques-980629216/
+[github-autor3]: https://github.com/hugnarok
+[instagram-autor3]: https://www.instagram.com/hugomarques_02/
+
+[gmail-autor4]: mailto:ramalhooliveiravini@gmail.com
+[linkedin-autor4]: https://www.linkedin.com/in/vin%C3%ADcius-ramalho-de-oliveira-4464b8327/
+[github-autor4]: https://github.com/ViniciusRO22
+[instagram-autor4]: https://www.instagram.com/_vinicius.ro_/
