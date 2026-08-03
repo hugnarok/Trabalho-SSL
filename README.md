@@ -1,5 +1,7 @@
 # SafeAlert — Sistema de Monitoramento Acústico
 
+> **Idioma:** **Português (BR)** · [English](README.en.md)
+
 Sistema distribuído de detecção de situações de risco em ambiente acadêmico. Opera por **câmera e microfone** e identifica três tipos de evento: **grito**, **impacto sonoro** e **pedido de socorro verbal**. Ao confirmar uma anomalia, envia automaticamente à central um clipe de vídeo retroativo, áudio e metadados do incidente.
 
 > **Escopo ético:** ferramenta de triagem e registro de evidências para apoio operacional. Não realiza identificação de pessoas e não substitui perícia. Use apenas com consentimento dos participantes e base legal (LGPD).
@@ -18,6 +20,7 @@ Sistema distribuído de detecção de situações de risco em ambiente acadêmic
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Scripts utilitários](#scripts-utilitários)
 - [Documentação técnica](#documentação-técnica)
+- [Artigo para simpósio (EN)](#artigo-para-simpósio-en)
 - [Licença e uso ético](#licença-e-uso-ético)
 
 ---
@@ -330,6 +333,25 @@ Trabalho-SSL/
 
 - [Arquitetura do sistema](docs/arquitetura.md) — fluxo de dados, componentes, decisões de design
 - [Pipeline de Machine Learning](docs/ml.md) — mel-espectrograma, treinamento, avaliação
+- [Calibração](docs/calibracao.md) — reduzir falsos positivos
+- [Referências](docs/referencias.md)
+
+### Versão em inglês (symposium)
+
+- [README (EN)](README.en.md)
+- [Architecture](docs/architecture.en.md)
+- [ML pipeline](docs/ml.en.md)
+- [Calibration](docs/calibration.en.md)
+- [References](docs/references.en.md)
+- [Symposium paper draft](docs/symposium-paper.md)
+
+---
+
+## Artigo para simpósio (EN)
+
+Rascunho acadêmico em inglês para submissão a simpósios de robótica/sistemas inteligentes:
+
+**[docs/symposium-paper.md](docs/symposium-paper.md)** — abstract, arquitetura, resultados experimentais e considerações éticas.
 
 ---
 

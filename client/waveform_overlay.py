@@ -109,7 +109,7 @@ def render_waveform_overlay(
     if segment.size == 0:
         cv2.putText(
             canvas,
-            "Aguardando audio...",
+            "Waiting for audio...",
             (8, mid + 5),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.45,
@@ -144,7 +144,7 @@ def render_waveform_overlay(
     accent = _accent_for(danger_level)
     cv2.putText(
         canvas,
-        "Forma de onda",
+        "Waveform",
         (8, 16),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.42,
@@ -154,7 +154,7 @@ def render_waveform_overlay(
     )
     cv2.putText(
         canvas,
-        f"RMS={rms_global:.4f}  limiar={threshold:.3f}",
+        f"RMS={rms_global:.4f}  threshold={threshold:.3f}",
         (8, height - 8),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.38,
@@ -162,11 +162,11 @@ def render_waveform_overlay(
         1,
         cv2.LINE_AA,
     )
-    zone = {"ok": "normal", "warning": "suspeita", "danger": "PERIGO"}[danger_level]
+    zone = {"ok": "normal", "warning": "suspicious", "danger": "DANGER"}[danger_level]
     cv2.putText(
         canvas,
         zone.upper(),
-        (width - 90, 16),
+        (width - 120, 16),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.45,
         accent,

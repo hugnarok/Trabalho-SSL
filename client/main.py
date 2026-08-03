@@ -80,7 +80,7 @@ def run():
     alert_lock = threading.Lock()
     had_active_alert = False
     frame_interval = 1.0 / max(1, settings.display_fps)
-    window = "Monitoramento de Ondas Sonoras"
+    window = "Sound Wave Monitoring"
 
     print("Cliente iniciado. Central:", settings.central_url)
     print(

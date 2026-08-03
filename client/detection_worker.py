@@ -15,12 +15,12 @@ from client.detectors.ml_events import detect_ml_events
 from client.detectors.scream import detect_scream
 from client.ml.classifier import is_model_available
 from shared.config import settings
-from shared.models import EventType
+from shared.models import EventType, event_type_label
 
 
 @dataclass
 class DetectionState:
-    status: str = "iniciando..."
+    status: str = "starting..."
     best: Optional[DetectionResult] = None
     candidate: Optional[DetectionResult] = None
     last_audio: Optional[np.ndarray] = None
@@ -101,11 +101,11 @@ class DetectionWorker(threading.Thread):
         candidate: Optional[DetectionResult],
     ) -> str:
         if confirmed:
-            return confirmed.event_type.value
+            return event_type_label(confirmed.event_type)
         if candidate:
             req = self._confirmations_required_for(candidate.event_type)
-            return f"{candidate.event_type.value}? ({self._streak_count}/{req})"
-        return "monitorando"
+            return f"{event_type_label(candidate.event_type)}? ({self._streak_count}/{req})"
+        return "monitoring"
 
     def run(self) -> None:
         self._running = True

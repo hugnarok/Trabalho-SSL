@@ -20,7 +20,7 @@ MEDIA_TYPES = {
 def _load_meta(alert_id: str) -> dict:
     meta_file = settings.alerts_dir / alert_id / "meta.json"
     if not meta_file.is_file():
-        raise HTTPException(status_code=404, detail="Alerta não encontrado")
+        raise HTTPException(status_code=404, detail="Alert not found")
     return json.loads(meta_file.read_text(encoding="utf-8"))
 
 
@@ -35,18 +35,18 @@ def _resolve_media_file(alert_id: str, kind: str) -> Tuple[Path, str]:
         "snapshot": "snapshot_path",
     }.get(kind)
     if not key:
-        raise HTTPException(status_code=400, detail="Tipo de mídia inválido")
+        raise HTTPException(status_code=400, detail="Invalid media type")
 
     rel = meta.get(key)
     if not rel:
-        raise HTTPException(status_code=404, detail="Arquivo não disponível neste alerta")
+        raise HTTPException(status_code=404, detail="File not available for this alert")
 
     root = settings.alerts_dir.parent.parent.resolve()
     full = (root / rel).resolve()
     if not str(full).startswith(str(root)):
-        raise HTTPException(status_code=403, detail="Caminho inválido")
+        raise HTTPException(status_code=403, detail="Invalid path")
     if not full.is_file():
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado no disco")
+        raise HTTPException(status_code=404, detail="File not found on disk")
 
     media_type = MEDIA_TYPES.get(full.suffix.lower(), "application/octet-stream")
     return full, media_type

@@ -14,6 +14,24 @@ class EventType(str, Enum):
     AGGRESSION = "agressao"  # vídeo / multimodal (futuro)
 
 
+def event_type_label(event_type: EventType) -> str:
+    """English label for UI display (API/storage keeps Portuguese enum values)."""
+    return {
+        EventType.SCREAM: "scream",
+        EventType.IMPACT: "impact",
+        EventType.HELP_REQUEST: "help",
+        EventType.AGGRESSION: "aggression",
+    }[event_type]
+
+
+def event_type_value_label(value: str) -> str:
+    """Map stored event_type string (e.g. from meta.json) to English UI label."""
+    try:
+        return event_type_label(EventType(value))
+    except ValueError:
+        return value
+
+
 class AlertPayload(BaseModel):
     camera_id: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

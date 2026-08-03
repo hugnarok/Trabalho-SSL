@@ -19,8 +19,8 @@ from shared.config import settings
 from shared.models import AlertResponse, EventType
 
 app = FastAPI(
-    title="Central de Alertas — SSL Trabalho Final",
-    description="Recebe alertas de violência (grito, impacto, pedido de socorro).",
+    title="SafeAlert — Alert Central",
+    description="Receives violence-related alerts (scream, impact, help request).",
     version="0.1.0",
 )
 
@@ -46,10 +46,10 @@ def central_dashboard():
     """Interface mínima da central (atende requisito de UI do trabalho)."""
     return """
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Central de Alertas</title>
+  <title>SafeAlert — Alert Central</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; background: #1a1a2e; color: #eee; }
     h1 { color: #e94560; }
@@ -66,25 +66,35 @@ def central_dashboard():
   </style>
 </head>
 <body>
-  <h1>Central de Alertas — Monitoramento</h1>
+  <h1>SafeAlert — Monitoring Dashboard</h1>
   <div class="toolbar">
-    <p style="margin:0">Atualiza a cada 5s. <a href="/docs">API Swagger</a></p>
-    <button type="button" class="btn-clear" id="btnClear">Limpar alertas</button>
+    <p style="margin:0">Refreshes every 5s. <a href="/docs">API Swagger</a></p>
+    <button type="button" class="btn-clear" id="btnClear">Clear alerts</button>
   </div>
-  <div id="list">Carregando...</div>
+  <div id="list">Loading...</div>
   <script>
+    const EVENT_LABELS = {
+      grito: 'scream',
+      impacto: 'impact',
+      socorro: 'help',
+      agressao: 'aggression',
+    };
+    function eventLabel(type) {
+      return EVENT_LABELS[type] || type;
+    }
+
     async function clearAlerts() {
-      if (!confirm('Remover todos os alertas salvos? Esta ação não pode ser desfeita.')) return;
+      if (!confirm('Remove all saved alerts? This action cannot be undone.')) return;
       const btn = document.getElementById('btnClear');
       btn.disabled = true;
       try {
         const r = await fetch('/api/alerts', { method: 'DELETE' });
         const data = await r.json();
-        if (!r.ok) throw new Error(data.detail || 'Falha ao limpar');
+        if (!r.ok) throw new Error(data.detail || 'Failed to clear alerts');
         await load();
-        alert(data.removed > 0 ? `${data.removed} alerta(s) removido(s).` : 'Nenhum alerta para remover.');
+        alert(data.removed > 0 ? `${data.removed} alert(s) removed.` : 'No alerts to remove.');
       } catch (e) {
-        alert('Erro ao limpar: ' + e.message);
+        alert('Error clearing alerts: ' + e.message);
       } finally {
         btn.disabled = false;
       }
@@ -99,7 +109,7 @@ def central_dashboard():
       const el = document.getElementById('list');
       if (!data.alerts.length) {
         listSignature = '';
-        el.innerHTML = '<p>Nenhum alerta ainda.</p>';
+        el.innerHTML = '<p>No alerts yet.</p>';
         return;
       }
       const signature = data.alerts.map(a => a.alert_id + (a.received_at || '')).join('|');
@@ -108,11 +118,11 @@ def central_dashboard():
 
       el.innerHTML = data.alerts.map(a => `
         <div class="alert">
-          <strong>${a.event_type}</strong> — câmera ${a.camera_id} — confiança ${a.confidence}
+          <strong>${eventLabel(a.event_type)}</strong> — camera ${a.camera_id} — confidence ${a.confidence}
           <br><small>${a.received_at}</small>
           <p>${a.message || ''}</p>
-          ${a.transcricao ? `<p><strong>Fala no momento:</strong> ${a.transcricao}</p>` : ''}
-          ${a.video_path ? `<video controls playsinline preload="auto" src="/api/alerts/${a.alert_id}/video#t=0.1"></video><a href="/api/alerts/${a.alert_id}/video" target="_blank">Abrir vídeo</a>` : ''}
+          ${a.transcricao ? `<p><strong>Speech at event:</strong> ${a.transcricao}</p>` : ''}
+          ${a.video_path ? `<video controls playsinline preload="auto" src="/api/alerts/${a.alert_id}/video#t=0.1"></video><a href="/api/alerts/${a.alert_id}/video" target="_blank">Open video</a>` : ''}
           ${a.snapshot_path ? `<img src="/api/alerts/${a.alert_id}/snapshot" alt="snapshot" />` : ''}
           ${a.audio_path ? `<audio controls preload="metadata" src="/api/alerts/${a.alert_id}/audio"></audio>` : ''}
         </div>
@@ -151,7 +161,7 @@ def serve_file(file_path: str):
     root = settings.alerts_dir.parent.parent.resolve()
     full = (root / file_path).resolve()
     if not str(full).startswith(str(root)) or not full.is_file():
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+        raise HTTPException(status_code=404, detail="File not found")
     media_type = MEDIA_TYPES.get(full.suffix.lower(), "application/octet-stream")
     return FileResponse(full, media_type=media_type)
 
